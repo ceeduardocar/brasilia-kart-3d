@@ -219,9 +219,9 @@ export function createGameUI(callbacks = {}) {
       .bsb-mobile-topbar {
         display: none;
         position: absolute;
-        top: 8px;
-        left: 10px;
-        right: 10px;
+        top: calc(8px + env(safe-area-inset-top, 0px));
+        left: calc(10px + env(safe-area-inset-left, 0px));
+        right: calc(10px + env(safe-area-inset-right, 0px));
         align-items: center;
         justify-content: space-between;
         gap: 8px;
@@ -556,9 +556,9 @@ export function createGameUI(callbacks = {}) {
       .bsb-mobile-controls {
         display: none;
         position: fixed;
-        bottom: 18px;
-        left: 12px;
-        right: 12px;
+        bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+        left: calc(12px + env(safe-area-inset-left, 0px));
+        right: calc(12px + env(safe-area-inset-right, 0px));
         align-items: flex-end;
         justify-content: space-between;
         pointer-events: none;
@@ -703,8 +703,8 @@ export function createGameUI(callbacks = {}) {
           display: none; /* Hide bottom landmark strip from main screen (available in Menu/Map) */
         }
         .bsb-left-hud {
-          top: 48px;
-          left: 10px;
+          top: calc(48px + env(safe-area-inset-top, 0px));
+          left: calc(10px + env(safe-area-inset-left, 0px));
         }
         .bsb-item-card {
           display: none; /* Hide large desktop item card on mobile */
@@ -725,8 +725,8 @@ export function createGameUI(callbacks = {}) {
 
         /* Compact Landmark Toast on Mobile (Never blocks view!) */
         .bsb-guide-card {
-          top: 48px;
-          right: 10px;
+          top: calc(48px + env(safe-area-inset-top, 0px));
+          right: calc(10px + env(safe-area-inset-right, 0px));
           left: auto;
           width: auto;
           max-width: 60vw;
@@ -752,7 +752,7 @@ export function createGameUI(callbacks = {}) {
 
         /* Speedometer on mobile: clean pill centered at bottom */
         .bsb-speedo-panel {
-          bottom: 22px;
+          bottom: calc(22px + env(safe-area-inset-bottom, 0px));
           left: 50%;
           transform: translateX(-50%);
           padding: 6px 12px;
