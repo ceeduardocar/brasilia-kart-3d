@@ -1851,32 +1851,65 @@ export function buildBrasiliaUltraImmersion(THREE, scene, trackSpline) {
       t.mesh.position.y = t.baseY + Math.abs(Math.sin(time * 4.2 + t.phase)) * 0.15;
     }
 
-    // 5G. Dynamic Distance Scaling & Gentle Bobbing for 3D Floating Sky Pins (`worldLabels3D`)
+    // 5G. Smart Clean Proximity Display for 3D Sky Pins (`worldLabels3D`)
+    // Prevents visual clutter ("poluição visual") by only displaying the immediate landmark
+    // and closest ministry in focus, keeping the 3D skyline clean and readable.
+    const isMobile = typeof window !== 'undefined' && window.innerWidth <= 820;
+    const maxActiveLabels = isMobile ? 1 : 3;
+    const maxVisibleDist = isMobile ? 240 : 380;
+
+    // Compute distances and find closest targets
+    const candidates = [];
+    if (playerPosition) {
+      for (let i = 0; i < worldLabels3D.length; i++) {
+        const lbl = worldLabels3D[i];
+        const dx = lbl.groundPos.x - playerPosition.x;
+        const dz = lbl.groundPos.z - playerPosition.z;
+        const dist = Math.hypot(dx, dz);
+        lbl.currentDist = dist;
+        if (dist <= maxVisibleDist) {
+          candidates.push(lbl);
+        } else {
+          // Beyond visible distance: hide immediately so sky is 100% clean
+          lbl.sprite.visible = false;
+          lbl.beamMesh.visible = false;
+          lbl.ringMesh.visible = false;
+        }
+      }
+    }
+
+    candidates.sort((a, b) => a.currentDist - b.currentDist);
+    const visibleSet = new Set(candidates.slice(0, maxActiveLabels));
+
     for (let i = 0; i < worldLabels3D.length; i++) {
       const lbl = worldLabels3D[i];
+      const shouldBeVisible = visibleSet.has(lbl);
+
+      if (!shouldBeVisible) {
+        lbl.sprite.visible = false;
+        lbl.beamMesh.visible = false;
+        lbl.ringMesh.visible = false;
+        continue;
+      }
+
+      lbl.sprite.visible = true;
+      lbl.beamMesh.visible = true;
+      lbl.ringMesh.visible = true;
+
       const bob = Math.sin(time * 1.8 + i * 0.7) * 1.2;
       lbl.sprite.position.y = lbl.groundPos.y + lbl.pinHeight + bob;
 
-      if (playerPosition) {
-        const dx = lbl.groundPos.x - playerPosition.x;
-        const dz = lbl.groundPos.z - playerPosition.z;
-        const dist = Math.sqrt(dx * dx + dz * dz);
+      // Gentle scale based on proximity without ballooning into giant text
+      const dist = lbl.currentDist || 100;
+      const mobileScaleMult = isMobile ? 0.48 : 0.78;
+      const distFactor = Math.min(1.35, Math.max(0.65, 0.6 + dist / 420));
+      const s = lbl.baseScale * mobileScaleMult * distFactor;
+      lbl.sprite.scale.set(s, s * (220 / 640), 1);
 
-        // Smooth distance scale so pins are readable both up close and 1200m across the Esplanada
-        const distFactor = Math.min(2.1, Math.max(0.78, 0.72 + dist / 680));
-        const s = lbl.baseScale * distFactor;
-        lbl.sprite.scale.set(s, s * (220 / 640), 1);
-
-        // For the 17 adjacent Ministry blocks, fade slightly when very far (>1100m) to keep skyline crisp
-        if (lbl.category === 'ministry') {
-          const alpha = dist > 1250 ? 0.45 : dist < 450 ? 0.96 : 0.78;
-          lbl.sprite.material.opacity = alpha;
-          lbl.beamMat.opacity = alpha * 0.2;
-        } else {
-          lbl.sprite.material.opacity = 0.95;
-          lbl.beamMat.opacity = timeOfDay === 'night' ? 0.34 : 0.22;
-        }
-      }
+      // Fade in smoothly as you get closer
+      const proximityAlpha = Math.max(0.2, Math.min(0.96, 1.0 - (dist / maxVisibleDist) * 0.65));
+      lbl.sprite.material.opacity = proximityAlpha;
+      lbl.beamMat.opacity = proximityAlpha * (timeOfDay === 'night' ? 0.35 : 0.2);
     }
   }
 
